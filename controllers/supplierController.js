@@ -1,14 +1,36 @@
 const Supplier = require("../models/supplier");
+const Item = require("../models/item");
 const asyncHandler = require("express-async-handler");
 
 // Display list of all Suppliers.
 exports.supplier_list = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Supplier list");
+  const allSuppliers = await Supplier.find({}, "name registration_number")
+    .sort({ name: 1 })
+    .exec();
+
+  res.render("supplier_list", { title: "Supplier List", supplier_list: allSuppliers });
 });
 
 // Display detail page for a specific Supplier.
 exports.supplier_detail = asyncHandler(async (req, res, next) => {
-  res.send(`NOT IMPLEMENTED: Supplier detail: ${req.params.id}`);
+  // Get details of supplier and all their items (in parallel)
+  const [supplier, allItemsBySupplier] = await Promise.all([
+    Supplier.findById(req.params.id).exec(),
+    Item.find({ supplier: req.params.id }, "name quantity category").exec(),
+  ]);
+
+  if (supplier === null) {
+    // No results.
+    const err = new Error("Author not found");
+    err.status = 404;
+    return next(err);
+  }
+
+  res.render("supplier_detail", {
+    title: "Supplier Detail",
+    supplier: supplier,
+    supplier_items: allItemsBySupplier,
+  });
 });
 
 // Display Author create form on GET.

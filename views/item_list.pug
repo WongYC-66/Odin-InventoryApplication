@@ -1,0 +1,15 @@
+extends layout
+
+block content
+  h1= title
+  p Total Registered Items = #{item_list.length}
+  if item_list.length
+    ul
+      each item in item_list
+        li
+          | #{item.category.name} - 
+          a(href=item.url) #{item.name}
+          |  (#{item.quantity} pcs)
+
+  else
+    p There are no items.

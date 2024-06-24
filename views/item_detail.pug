@@ -1,0 +1,11 @@
+extends layout
+
+block content
+  h1 Item: #{item.name}
+
+  p #[strong Supplier: ]
+    a(href=item.supplier.url) #{item.supplier.name}
+  p #[strong Quantity:] #{item.quantity}
+  p #[strong Price:] #{item.price}$
+  p #[strong Category: ]
+   a(href=item.category.url) #{item.category.name}
