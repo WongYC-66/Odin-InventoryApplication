@@ -2,10 +2,11 @@ const Item = require("../models/item");
 const Category = require("../models/category");
 const Supplier = require("../models/supplier");
 
+const { body, validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
 
 exports.index = asyncHandler(async (req, res, next) => {
-  // Get details of items, suppliers, category and genre counts (in parallel)
+  // Get details of items, suppliers, and category counts (in parallel)
   const [
     numItems,
     numCategory,
@@ -36,11 +37,11 @@ exports.item_list = asyncHandler(async (req, res, next) => {
 
 // Display detail page for a specific item.
 exports.item_detail = asyncHandler(async (req, res, next) => {
-  // Get details of books, book instances for specific book
-  const item  = await Item.findById(req.params.id)
-  .populate("supplier")
-  .populate("category")
-  .exec();
+  // Get details of items
+  const item = await Item.findById(req.params.id)
+    .populate("supplier")
+    .populate("category")
+    .exec();
 
   if (item === null) {
     // No results.
@@ -49,8 +50,6 @@ exports.item_detail = asyncHandler(async (req, res, next) => {
     return next(err);
   }
 
-  console.log(item)
-
   res.render("item_detail", {
     item: item,
   });
@@ -58,13 +57,86 @@ exports.item_detail = asyncHandler(async (req, res, next) => {
 
 // Display item create form on GET.
 exports.item_create_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Item create GET");
+  // Get all suppliers and categories, which we can use for adding to our item.
+  const [allSuppliers, allCategories] = await Promise.all([
+    Supplier.find().sort({ name: 1 }).exec(),
+    Category.find().sort({ name: 1 }).exec(),
+  ]);
+
+  res.render("item_form", {
+    title: "Create Item",
+    suppliers: allSuppliers,
+    categories: allCategories,
+  });
 });
 
 // Handle item create on POST.
-exports.item_create_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Item create POST");
-});
+exports.item_create_post = [
+  // Validate and sanitize fields.
+  body("name", "Name must not be empty.")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+  body("supplier", "Supplier must not be empty.")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+  body("quantity")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("quantity must not be empty")
+    .isNumeric()
+    .withMessage("quantity number has non-numeric characters.")
+    .escape(),
+  body("price")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("price must not be empty")
+    .isNumeric()
+    .withMessage("price has non-numeric characters.")
+    .escape(),
+  body("category", "category must not be empty")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+  // Process request after validation and sanitization.
+
+  asyncHandler(async (req, res, next) => {
+    // Extract the validation errors from a request.
+    const errors = validationResult(req);
+
+    // Create a Book object with escaped and trimmed data.
+    const item = new Item({
+      name: req.body.name,
+      supplier: req.body.supplier,
+      quantity: req.body.quantity,
+      price: req.body.price,
+      category: req.body.category,
+    });
+
+    if (!errors.isEmpty()) {
+      // There are errors. Render form again with sanitized values/error messages.
+
+      // Get all authors and categories for form.
+      const [allSuppliers, allCategories] = await Promise.all([
+        Supplier.find().sort({ name: 1 }).exec(),
+        Category.find().sort({ name: 1 }).exec(),
+      ]);
+
+      res.render("item_form", {
+        title: "Create Item",
+        suppliers: allSuppliers,
+        categories: allCategories,
+        item: item,
+        errors: errors.array(),
+      });
+    } else {
+      // Data from form is valid. Save Item.
+      await item.save();
+      res.redirect(item.url);
+    }
+  }),
+];
 
 // Display item delete form on GET.
 exports.item_delete_get = asyncHandler(async (req, res, next) => {

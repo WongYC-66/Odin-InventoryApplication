@@ -1,6 +1,9 @@
 const Supplier = require("../models/supplier");
 const Item = require("../models/item");
+
+const { body, validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
+
 
 // Display list of all Suppliers.
 exports.supplier_list = asyncHandler(async (req, res, next) => {
@@ -35,13 +38,68 @@ exports.supplier_detail = asyncHandler(async (req, res, next) => {
 
 // Display Author create form on GET.
 exports.supplier_create_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Supplier create GET");
+  res.render("supplier_form", { title: "Create Supplier" });
 });
 
 // Handle Author create on POST.
-exports.supplier_create_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Supplier create POST");
-});
+exports.supplier_create_post = [
+  // Validate and sanitize fields.
+  body("name")
+    .trim()
+    .isLength({ min: 3, max: 50 })
+    .escape()
+    .withMessage("Supplier name must between 3 - 50 characters")
+    .isAlphanumeric()
+    .withMessage("Name has non-alphanumeric characters."),
+  body("address")
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .escape()
+    .withMessage("Address must be between 1 - 100 characters"),
+  body("contact_number")
+    .trim()
+    .escape()
+    .optional({ values: "falsy" })
+    .isAlphanumeric()
+    .withMessage("contact number has non-alphanumeric characters."),
+  body("registration_number")
+    .trim()
+    .escape()
+    .optional({ values: "falsy" })
+    .isNumeric()
+    .withMessage("registration number has non-numeric characters."),
+
+  // Process request after validation and sanitization.
+  asyncHandler(async (req, res, next) => {
+    // Extract the validation errors from a request.
+    const errors = validationResult(req);
+
+    // Create Author object with escaped and trimmed data
+    const supplier = new Supplier({
+      name: req.body.name,
+      address: req.body.address,
+      contact_number: req.body.contact_number,
+      registration_number: req.body.registration_number,
+    });
+
+    if (!errors.isEmpty()) {
+      // There are errors. Render form again with sanitized values/errors messages.
+      res.render("supplier_form", {
+        title: "Create Supplier",
+        supplier: supplier,
+        errors: errors.array(),
+      });
+      return;
+    } else {
+      // Data from form is valid.
+
+      // Save supplier.
+      await supplier.save();
+      // Redirect to new supplier record.
+      res.redirect(supplier.url);
+    }
+  }),
+];
 
 // Display Author delete form on GET.
 exports.supplier_delete_get = asyncHandler(async (req, res, next) => {
