@@ -21,7 +21,7 @@ router.post("/item/create", item_controller.item_create_post);
 router.get("/item/:id/delete", item_controller.item_delete_get);
 
 // POST request to delete Item.
-router.post("/item/:id/delete", item_controller.item_create_post);
+router.post("/item/:id/delete", item_controller.item_delete_post);
 
 // GET request to update Item.
 router.get("/item/:id/update", item_controller.item_update_get);

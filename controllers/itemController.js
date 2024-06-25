@@ -45,7 +45,7 @@ exports.item_detail = asyncHandler(async (req, res, next) => {
 
   if (item === null) {
     // No results.
-    const err = new Error("Book not found");
+    const err = new Error("Item not found");
     err.status = 404;
     return next(err);
   }
@@ -105,7 +105,7 @@ exports.item_create_post = [
     // Extract the validation errors from a request.
     const errors = validationResult(req);
 
-    // Create a Book object with escaped and trimmed data.
+    // Create a Item object with escaped and trimmed data.
     const item = new Item({
       name: req.body.name,
       supplier: req.body.supplier,
@@ -117,7 +117,7 @@ exports.item_create_post = [
     if (!errors.isEmpty()) {
       // There are errors. Render form again with sanitized values/error messages.
 
-      // Get all authors and categories for form.
+      // Get all suppliers and categories for form.
       const [allSuppliers, allCategories] = await Promise.all([
         Supplier.find().sort({ name: 1 }).exec(),
         Category.find().sort({ name: 1 }).exec(),
@@ -140,20 +140,122 @@ exports.item_create_post = [
 
 // Display item delete form on GET.
 exports.item_delete_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Item delete GET");
+  // Get detail of item
+  const item = await Item.findById(req.params.id)
+    .populate("supplier")
+    .populate("category")
+    .exec();
+
+  if (item === null) {
+    // No results.
+    res.redirect("/catalog/items");
+  }
+
+  res.render("item_delete", {
+    title: "Delete Item",
+    item: item,
+  });
 });
 
 // Handle item delete on POST.
 exports.item_delete_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Item delete POST");
+
+  // Delete object and redirect to the list of items.
+  await Item.findByIdAndDelete(req.body.itemId);
+  res.redirect("/catalog/items");
 });
 
 // Display item update form on GET.
 exports.item_update_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Item update GET");
+  // Get item, suppliers and categories for form.
+  const [item, allSuppliers, allCategories] = await Promise.all([
+    Item.findById(req.params.id).populate("supplier").exec(),
+    Supplier.find().sort({ name: 1 }).exec(),
+    Category.find().sort({ name: 1 }).exec(),
+  ]);
+
+  if (item === null) {
+    // No results.
+    const err = new Error("Item not found");
+    err.status = 404;
+    return next(err);
+  }
+
+  res.render("item_form", {
+    title: "Update Item",
+    suppliers: allSuppliers,
+    categories: allCategories,
+    item: item,
+  });
 });
 
 // Handle item update on POST.
-exports.item_update_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Item update POST");
-});
+exports.item_update_post = [
+  // Validate and sanitize fields.
+  body("name", "Name must not be empty.")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+  body("supplier", "Supplier must not be empty.")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+  body("quantity")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("quantity must not be empty")
+    .isNumeric()
+    .withMessage("quantity number has non-numeric characters.")
+    .escape(),
+  body("price")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("price must not be empty")
+    .isNumeric()
+    .withMessage("price has non-numeric characters.")
+    .escape(),
+  body("category", "category must not be empty")
+    .trim()
+    .isLength({ min: 1 })
+    .escape(),
+
+  // Process request after validation and sanitization.
+  asyncHandler(async (req, res, next) => {
+    // Extract the validation errors from a request.
+    const errors = validationResult(req);
+
+    // Create a Item object with escaped/trimmed data and old id.
+    const item = new Item({
+      name: req.body.name,
+      supplier: req.body.supplier,
+      quantity: req.body.quantity,
+      price: req.body.price,
+      category: req.body.category,
+      _id: req.params.id, // This is required, or a new ID will be assigned!
+    });
+
+    if (!errors.isEmpty()) {
+      // There are errors. Render form again with sanitized values/error messages.
+
+      // Get all suppliers and categories for form
+      const [allSuppliers, allCategories] = await Promise.all([
+        Supplier.find().sort({ name: 1 }).exec(),
+        Category.find().sort({ name: 1 }).exec(),
+      ]);
+
+      res.render("item_form", {
+        title: "Update Item",
+        suppliers: allSuppliers,
+        categories: allCategories,
+        item: item,
+        errors: errors.array(),
+      });
+      return;
+    } else {
+      // Data from form is valid. Update the record.
+      const updatedItem = await Item.findByIdAndUpdate(req.params.id, item, {});
+      // Redirect to item detail page.
+      res.redirect(updatedItem.url);
+    }
+  }),
+];

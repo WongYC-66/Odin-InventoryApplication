@@ -14,3 +14,9 @@ block content
             a(href=item.url) #{item.name} - #{item.supplier.name}  (#{item.quantity} pcs)
     else
       p This cateogry has no items.
+  
+  hr
+  p
+    a(href=category.url+'/delete') Delete category
+  p
+    a(href=category.url+'/update') Update category
