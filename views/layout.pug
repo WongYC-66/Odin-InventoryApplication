@@ -12,27 +12,33 @@ html(lang='en')
 
     link(rel='stylesheet', href='/stylesheets/style.css')
   body
-    div(class='container-fluid')
-      div(class='row')
-        div(class='col-sm-2')
-          block sidebar
-            ul(class='sidebar-nav')
-              li
-                a(href='/catalog') Home
-              li
-                a(href='/catalog/items') All items
-              li
-                a(href='/catalog/categories') All catogries
-              li
-                a(href='/catalog/suppliers') All suppliers
-              li
-                hr
-              li
-                a(href='/catalog/item/create') Create new item
-              li
-                a(href='/catalog/category/create') Create new category
-              li
-                a(href='/catalog/supplier/create') Create new supplier
+    div(class='container-fluid p-0 m-0 d-flex flex-column vh-100')
+      ul(class='nav nav-pills bg-dark p-3 ')
+        li(class='nav-item')
+          a(href='/catalog' class="nav-link") Home
 
-        div(class='col-sm-10')
-          block content
+        li(class='nav-item')
+          a(href='/catalog/items' class="nav-link") All items
+
+        li(class='nav-item')
+          a(href='/catalog/categories' class="nav-link") All catogries
+
+        li(class='nav-item')
+          a(href='/catalog/suppliers' class="nav-link") All suppliers
+
+        li(class="nav-item dropdown")
+          a(class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false") Create New
+          ul(class="dropdown-menu")
+            li
+              a(href='/catalog/item/create' class="dropdown-item") Create new item
+            li
+              a(href='/catalog/category/create' class="dropdown-item") Create new category
+            li
+              a(href='/catalog/supplier/create' class="dropdown-item") Create new supplier
+
+      div(class='p-5 m-4 py-2 my-2 text-primary-emphasis flex-grow-1')
+        block content
+      
+
+      div(class="text-bg-dark text-center")
+        | Designed and created by YC-Wong 2024
