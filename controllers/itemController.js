@@ -1,6 +1,7 @@
 const Item = require("../models/item");
 const Category = require("../models/category");
 const Supplier = require("../models/supplier");
+const { generateImageUrl } = require('./cloudinary.js')
 
 const { body, validationResult } = require("express-validator");
 const asyncHandler = require("express-async-handler");
@@ -112,6 +113,7 @@ exports.item_create_post = [
       quantity: req.body.quantity,
       price: req.body.price,
       category: req.body.category,
+      imgUrl: req.body.imgUrl || '',
     });
 
     if (!errors.isEmpty()) {
@@ -131,6 +133,14 @@ exports.item_create_post = [
         errors: errors.array(),
       });
     } else {
+      if (req.files) {
+        // if user upload photo, imgUrl will be overide with cloudinary generated url
+        // upload photo to Cloudinary and get public id
+        const uploadImage = req.files.uploadImage;
+        let imageUrl = await generateImageUrl(uploadImage)
+        item.imgUrl = imageUrl
+      }
+
       // Data from form is valid. Save Item.
       await item.save();
       res.redirect(item.url);
@@ -231,6 +241,7 @@ exports.item_update_post = [
       quantity: req.body.quantity,
       price: req.body.price,
       category: req.body.category,
+      imgUrl: req.body.imgUrl || '',
       _id: req.params.id, // This is required, or a new ID will be assigned!
     });
 
@@ -252,6 +263,18 @@ exports.item_update_post = [
       });
       return;
     } else {
+
+      console.log(item)
+      console.log(req.body.imgUrl)
+      if (req.files) {
+        // if user upload photo, imgUrl will be overide with cloudinary generated url
+        // upload photo to Cloudinary and get public id
+        const uploadImage = req.files.uploadImage;
+        let imageUrl = await generateImageUrl(uploadImage)
+        item.imgUrl = imageUrl
+      }
+
+
       // Data from form is valid. Update the record.
       const updatedItem = await Item.findByIdAndUpdate(req.params.id, item, {});
       // Redirect to item detail page.

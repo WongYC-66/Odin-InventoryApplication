@@ -2,7 +2,7 @@ extends layout
 
 block content
   h1 Item: #{item.name}
-
+  img(src=item.imgUrl, alt="No photo")
   p #[strong Supplier: ]
     a(href=item.supplier.url) #{item.supplier.name}
   p #[strong Quantity:] #{item.quantity}
