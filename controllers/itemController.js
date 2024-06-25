@@ -264,8 +264,6 @@ exports.item_update_post = [
       return;
     } else {
 
-      console.log(item)
-      console.log(req.body.imgUrl)
       if (req.files) {
         // if user upload photo, imgUrl will be overide with cloudinary generated url
         // upload photo to Cloudinary and get public id
